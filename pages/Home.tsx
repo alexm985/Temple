@@ -4,7 +4,7 @@ import { ArrowRight, Calendar, Users, Heart, Star, Sparkles, Mail, ChevronLeft, 
 import Section from '../components/Section';
 import { Language } from '../types';
 import { TRANSLATIONS, FESTIVALS } from '../constants';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
 
 interface HomeProps {
   language: Language;
@@ -14,12 +14,12 @@ const Home: React.FC<HomeProps> = ({ language }) => {
   const t = TRANSLATIONS[language];
   const [currentSlide, setCurrentSlide] = useState(0);
 
-  // Helper to format date for display
-  const formatDate = (isoDate: string) => {
-    return new Date(isoDate).toLocaleDateString(language === 'hi' ? 'hi-IN' : 'en-US', {
-      month: 'short', day: 'numeric', year: 'numeric'
-    });
-  };
+  // Scroll Animations for Hero
+  const { scrollY } = useScroll();
+  // Zoom out from 1.15 to 1.0 as user scrolls down 1000px
+  const bgScale = useTransform(scrollY, [0, 1000], [1.15, 1]);
+  // Move text down by 200px as user scrolls down 500px (Parallax)
+  const textParallax = useTransform(scrollY, [0, 500], [0, 200]);
 
   // Filter only upcoming festivals or specific ones mentioned in the brief
   const highlightFestivals = FESTIVALS.filter(f => ['1', '2', '3'].includes(f.id));
@@ -54,7 +54,7 @@ const Home: React.FC<HomeProps> = ({ language }) => {
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % slides.length);
-    }, 6000);
+    }, 8000); // Increased duration slightly for better UX with scroll
     return () => clearInterval(timer);
   }, [slides.length]);
 
@@ -74,19 +74,22 @@ const Home: React.FC<HomeProps> = ({ language }) => {
             transition={{ duration: 1 }}
             className="absolute inset-0"
           >
-            {/* Background Image with Zoom Effect */}
+            {/* Background Image with Scroll Zoom Effect */}
             <motion.div 
               className="absolute inset-0 bg-cover bg-center bg-no-repeat"
-              style={{ backgroundImage: `url("${slides[currentSlide].image}")` }}
-              initial={{ scale: 1.1 }}
-              animate={{ scale: 1 }}
-              transition={{ duration: 6, ease: "linear" }}
+              style={{ 
+                backgroundImage: `url("${slides[currentSlide].image}")`,
+                scale: bgScale // Bound to scrollY
+              }}
             >
               <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/30 to-stone-900/90"></div>
             </motion.div>
 
-            {/* Content */}
-            <div className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center text-white">
+            {/* Content with Scroll Parallax Effect */}
+            <motion.div 
+              style={{ y: textParallax }} // Bound to scrollY
+              className="relative z-10 container mx-auto px-4 h-full flex flex-col justify-center items-center text-center text-white"
+            >
               <motion.div
                 initial={{ y: 30, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -132,7 +135,7 @@ const Home: React.FC<HomeProps> = ({ language }) => {
                   </Link>
                 </div>
               </motion.div>
-            </div>
+            </motion.div>
           </motion.div>
         </AnimatePresence>
 
@@ -166,7 +169,7 @@ const Home: React.FC<HomeProps> = ({ language }) => {
       </section>
 
       {/* Intro Section */}
-      <Section className="bg-stone-50 text-center">
+      <Section className="bg-stone-50 text-center relative z-20">
         <div className="container mx-auto px-4 max-w-4xl">
           <h2 className="text-3xl md:text-5xl font-display font-bold text-stone-800 mb-6">A Sanctuary of Bhakti, Seva, and Community</h2>
           <div className="w-32 h-1.5 bg-saffron-500 mx-auto mb-8 rounded-full"></div>
